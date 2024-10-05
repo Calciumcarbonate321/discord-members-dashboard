@@ -129,8 +129,12 @@ export default function MemberTable() {
     if (deletingMemberId === null) return
 
     try {
-      const response = await fetch(`/api/members/${deletingMemberId}`, {
+      const response = await fetch('/api/members', {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: members.find((member) => member.id === deletingMemberId)?.email }),
       })
       if (!response.ok) {
         throw new Error('Failed to delete member')
@@ -147,6 +151,7 @@ export default function MemberTable() {
         title: "Error Deleting Member",
         description: "Failed to delete member. Please try again.",
         variant: "destructive",
+        duration: 2000,
       })
     } finally {
       setIsDeleteDialogOpen(false)
@@ -199,6 +204,7 @@ export default function MemberTable() {
         title: "Error Modifying Member",
         description: "Failed to modify member. Please try again.",
         variant: "destructive",
+        duration: 2000,
       })
     }
   }
@@ -240,6 +246,7 @@ export default function MemberTable() {
         title: "Error Adding Member",
         description: "Failed to add new member. Please try again.",
         variant: "destructive",
+        duration: 2000,
       })
     }
   }
@@ -289,6 +296,7 @@ export default function MemberTable() {
           title: "Invalid CSV Format",
           description: "CSV must contain headers: name, email, department, role",
           variant: "destructive",
+          duration: 2000,
         })
         return
       }
@@ -325,6 +333,7 @@ export default function MemberTable() {
           title: "Error Bulk Uploading Members",
           description: err instanceof Error ? err.message : "Failed to bulk upload members. Please try again.",
           variant: "destructive",
+          duration: 2000,
         })
       }
     }

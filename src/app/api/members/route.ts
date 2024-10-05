@@ -32,3 +32,13 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(member);
 }
+
+export async function DELETE(request: NextRequest) {
+    const { email } = await request.json() as { email: string };
+    const member = await db.member.delete({
+        where: {
+            email: email,
+        }
+    });
+    return NextResponse.json(member);
+}
