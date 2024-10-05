@@ -39,20 +39,52 @@ interface Member {
   role: string
 }
 
+interface CsvMember {
+  name: string
+  email: string
+  department: string
+  role: string
+}
+
 const departmentMapping = {
   "Technical": "TECHNICAL",
   "Design": "DESIGN",
   "Management": "MANAGEMENT",
   "Marketing": "MARKETING"
-}
+} as const
 
 const roleMapping = {
   "Member": "MEMBER",
   "Core Member": "CORE_MEMBER"
-}
+} as const
 
-const departments = Object.keys(departmentMapping)
-const roles = Object.keys(roleMapping)
+type DepartmentKey = keyof typeof departmentMapping
+type RoleKey = keyof typeof roleMapping
+type Department = typeof departmentMapping[DepartmentKey]
+type Role = typeof roleMapping[RoleKey]
+
+const departments = Object.keys(departmentMapping) as DepartmentKey[]
+const roles = Object.keys(roleMapping) as RoleKey[]
+
+// Type-safe CSV parsing function
+const parseCsvLine = (headers: string[], line: string): CsvMember => {
+  const values = line.split('\t')
+  const member = headers.reduce<Partial<CsvMember>>((obj, header, index) => {
+    const trimmedHeader = header.trim() as keyof CsvMember
+    obj[trimmedHeader] = values[index]?.trim() ?? ""
+    return obj
+  }, {}) as CsvMember
+
+  // Validate department and role
+  if (!Object.values(departmentMapping).includes(member.department as Department)) {
+    throw new Error(`Invalid department: ${member.department}`)
+  }
+  if (!Object.values(roleMapping).includes(member.role as Role)) {
+    throw new Error(`Invalid role: ${member.role}`)
+  }
+
+  return member
+}
 
 export default function MemberTable() {
   const [members, setMembers] = useState<Member[]>([])
@@ -68,7 +100,7 @@ export default function MemberTable() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetchMembers()
+    void fetchMembers()
   }, [])
 
   const fetchMembers = async () => {
@@ -77,7 +109,7 @@ export default function MemberTable() {
       if (!response.ok) {
         throw new Error('Failed to fetch members')
       }
-      const data = await response.json()
+      const data = await response.json() as Member[]
       setMembers(data)
       setError(null)
     } catch (err) {
@@ -231,11 +263,11 @@ export default function MemberTable() {
   }
 
   const getDisplayDepartment = (apiDepartment: string) => {
-    return Object.entries(departmentMapping).find(([_, value]) => value === apiDepartment)?.[0] || apiDepartment
+    return Object.entries(departmentMapping).find(([_, value]) => value === apiDepartment)?.[0] ?? apiDepartment
   }
 
   const getDisplayRole = (apiRole: string) => {
-    return Object.entries(roleMapping).find(([_, value]) => value === apiRole)?.[0] || apiRole
+    return Object.entries(roleMapping).find(([_, value]) => value === apiRole)?.[0] ?? apiRole
   }
 
   const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,17 +278,27 @@ export default function MemberTable() {
     reader.onload = async (event) => {
       const csvData = event.target?.result as string
       const lines = csvData.split('\n')
-      const headers = lines[0]?.split('\t') || []
-      const newMembers = lines.slice(1).map(line => {
-        const values = line.split('\t')
-        return headers.reduce((obj: any, header, index) => {
-          obj[header.trim()] = values[index]?.trim() || ""
-          return obj
-        }, {})
-      })
-      newMembers.pop() // Remove last empty line
-      console.log(newMembers)
+      const headers = lines[0]?.split('\t').map(header => header.trim()) ?? []
+
+      // Validate headers
+      const requiredHeaders: Array<keyof CsvMember> = ['name', 'email', 'department', 'role']
+      const hasAllHeaders = requiredHeaders.every(header => headers.includes(header))
+      
+      if (!hasAllHeaders) {
+        toast({
+          title: "Invalid CSV Format",
+          description: "CSV must contain headers: name, email, department, role",
+          variant: "destructive",
+        })
+        return
+      }
+
       try {
+        const newMembers = lines
+          .slice(1)
+          .filter(line => line.trim())  // Skip empty lines
+          .map(line => parseCsvLine(headers, line))
+
         const response = await fetch('/api/members/bulk', {
           method: 'POST',
           headers: {
@@ -281,7 +323,7 @@ export default function MemberTable() {
         console.error('Error bulk uploading members:', err)
         toast({
           title: "Error Bulk Uploading Members",
-          description: "Failed to bulk upload members. Please try again.",
+          description: err instanceof Error ? err.message : "Failed to bulk upload members. Please try again.",
           variant: "destructive",
         })
       }

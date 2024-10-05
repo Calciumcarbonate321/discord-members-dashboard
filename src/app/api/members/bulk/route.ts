@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
-import { Department, Role } from "@prisma/client";
+import { type Department, type Role } from "@prisma/client";
 
 export async function POST(request:NextRequest) {
     const data = await request.json() as Array<{
