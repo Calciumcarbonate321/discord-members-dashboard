@@ -8,15 +8,15 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-    const { name, email, department, role } = (await request.json() as {
+    const { name, discord_id, department, role } = (await request.json() as {
         name: string;
-        email: string;
+        discord_id: string;
         department: Department;
         role: Role;
     })
     const member = await db.member.upsert({
         where: {
-            email:email,
+            discord_id:discord_id,
         },
         update: {
             name:name,
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         },
         create: {
             name:name,
-            email:email,
+            discord_id:discord_id,
             department:department,
             role:role,
         }
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-    const { email } = await request.json() as { email: string };
+    const { discord_id } = await request.json() as { discord_id: string };
     const member = await db.member.delete({
         where: {
-            email: email,
+            discord_id: discord_id,
         }
     });
     return NextResponse.json(member);

@@ -5,7 +5,7 @@ import { type Department, type Role } from "@prisma/client";
 export async function POST(request:NextRequest) {
     const data = await request.json() as Array<{
         name: string;
-        email: string;
+        discord_id: string;
         department: Department;
         role: Role;
       }>;

@@ -34,14 +34,14 @@ import { toast } from "~/hooks/use-toast"
 interface Member {
   id: number
   name: string
-  email: string
+  discord_id: string
   department: string
   role: string
 }
 
 interface CsvMember {
   name: string
-  email: string
+  discord_id: string
   department: string
   role: string
 }
@@ -66,9 +66,8 @@ type Role = typeof roleMapping[RoleKey]
 const departments = Object.keys(departmentMapping) as DepartmentKey[]
 const roles = Object.keys(roleMapping) as RoleKey[]
 
-// Type-safe CSV parsing function
 const parseCsvLine = (headers: string[], line: string): CsvMember => {
-  const values = line.split('\t')
+  const values = line.split(',')
   const member = headers.reduce<Partial<CsvMember>>((obj, header, index) => {
     const trimmedHeader = header.trim() as keyof CsvMember
     obj[trimmedHeader] = values[index]?.trim() ?? ""
@@ -90,7 +89,7 @@ export default function MemberTable() {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [newMember, setNewMember] = useState({ name: "", email: "", department: "", role: "" })
+  const [newMember, setNewMember] = useState({ name: "", discord_id: "", department: "", role: "" })
   const [modifyingMember, setModifyingMember] = useState<Member | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isModifyDialogOpen, setIsModifyDialogOpen] = useState(false)
@@ -134,7 +133,7 @@ export default function MemberTable() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: members.find((member) => member.id === deletingMemberId)?.email }),
+        body: JSON.stringify({ discord_id: members.find((member) => member.id === deletingMemberId)?.discord_id }),
       })
       if (!response.ok) {
         throw new Error('Failed to delete member')
@@ -172,7 +171,7 @@ export default function MemberTable() {
       const formattedMember = {
         id: modifyingMember.id,
         name: modifyingMember.name,
-        email: modifyingMember.email,
+        discord_id: modifyingMember.discord_id,
         department: departmentMapping[modifyingMember.department as keyof typeof departmentMapping] || modifyingMember.department,
         role: roleMapping[modifyingMember.role as keyof typeof roleMapping] || modifyingMember.role
       }
@@ -214,7 +213,7 @@ export default function MemberTable() {
     try {
       const formattedMember = {
         name: newMember.name,
-        email: newMember.email,
+        discord_id: newMember.discord_id,
         department: departmentMapping[newMember.department as keyof typeof departmentMapping],
         role: roleMapping[newMember.role as keyof typeof roleMapping]
       }
@@ -232,7 +231,7 @@ export default function MemberTable() {
       }
 
       await fetchMembers()
-      setNewMember({ name: "", email: "", department: "", role: "" })
+      setNewMember({ name: "", discord_id: "", department: "", role: "" })
       setIsAddDialogOpen(false)
 
       toast({
@@ -285,16 +284,16 @@ export default function MemberTable() {
     reader.onload = async (event) => {
       const csvData = event.target?.result as string
       const lines = csvData.split('\n')
-      const headers = lines[0]?.split('\t').map(header => header.trim()) ?? []
+      const headers = lines[0]?.split(',').map(header => header.trim()) ?? []
 
       // Validate headers
-      const requiredHeaders: Array<keyof CsvMember> = ['name', 'email', 'department', 'role']
+      const requiredHeaders: Array<keyof CsvMember> = ['name', 'discord_id', 'department', 'role']
       const hasAllHeaders = requiredHeaders.every(header => headers.includes(header))
       
       if (!hasAllHeaders) {
         toast({
           title: "Invalid CSV Format",
-          description: "CSV must contain headers: name, email, department, role",
+          description: "CSV must contain headers: name, discord_id, department, role",
           variant: "destructive",
           duration: 2000,
         })
@@ -367,8 +366,8 @@ export default function MemberTable() {
                   <Input id="name" name="name" value={newMember.name} onChange={handleInputChange} required />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email ID</Label>
-                  <Input id="email" name="email" type="email" value={newMember.email} onChange={handleInputChange} required />
+                  <Label htmlFor="discord_id">Discord ID</Label>
+                  <Input id="discord_id" name="discord_id" type="discord_id" value={newMember.discord_id} onChange={handleInputChange} required />
                 </div>
                 <div>
                   <Label htmlFor="department">Department</Label>
@@ -408,7 +407,7 @@ export default function MemberTable() {
               <DialogHeader>
                 <DialogTitle>Bulk Upload Members</DialogTitle>
                 <DialogDescription>
-                  Upload a CSV file with member details. The CSV should have headers: name, email, department, role.
+                  Upload a CSV file with member details. The CSV should have headers: name, discord_id, department, role.
                 </DialogDescription>
               </DialogHeader>
               <Input
@@ -439,8 +438,8 @@ export default function MemberTable() {
                 <Input id="modify-name" name="name" value={modifyingMember.name} onChange={handleModifyInputChange} required />
               </div>
               <div>
-                <Label htmlFor="modify-email">Email ID</Label>
-                <Input id="modify-email" name="email" type="email" value={modifyingMember.email} onChange={handleModifyInputChange} required />
+                <Label htmlFor="modify-discord_id">Discord ID</Label>
+                <Input id="modify-discord_id" name="discord_id" type="discord_id" value={modifyingMember.discord_id} onChange={handleModifyInputChange} required />
               </div>
               <div>
                 <Label htmlFor="modify-department">Department</Label>
@@ -493,7 +492,7 @@ export default function MemberTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Email ID</TableHead>
+            <TableHead>Discord ID</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Actions</TableHead>
@@ -503,7 +502,7 @@ export default function MemberTable() {
           {members.map((member) => (
             <TableRow key={member.id}>
               <TableCell>{member.name}</TableCell>
-              <TableCell>{member.email}</TableCell>
+              <TableCell>{member.discord_id}</TableCell>
               <TableCell>{getDisplayDepartment(member.department)}</TableCell>
               <TableCell>{getDisplayRole(member.role)}</TableCell>
               <TableCell>
