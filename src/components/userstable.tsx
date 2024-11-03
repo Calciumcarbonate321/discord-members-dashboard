@@ -30,7 +30,7 @@ import {
 } from "~/components/ui/select"
 
 import { toast } from "~/hooks/use-toast"
-import { Member } from "~/lib/types/member"
+import {type Member } from "~/lib/types/member"
 
 
 interface CsvMember {
