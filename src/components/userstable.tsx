@@ -30,14 +30,8 @@ import {
 } from "~/components/ui/select"
 
 import { toast } from "~/hooks/use-toast"
+import { Member } from "~/lib/types/member"
 
-interface Member {
-  id: number
-  name: string
-  discord_id: string
-  department: string
-  role: string
-}
 
 interface CsvMember {
   name: string
