@@ -1,7 +1,8 @@
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { NextAuthRequest } from "node_modules/next-auth/lib";
 import { addRole, deleteRole } from "~/lib/discord";
 import type { Member } from "~/lib/types/member";
+import { auth } from "~/server/auth";
 
 const TECHNICAL = "1292540786759700623"; 
 const DESIGN = "1292540869433491466";
@@ -21,16 +22,9 @@ interface DiscordMember {
   roles: string[];
 }
 
-export async function POST(request: NextRequest) {
-  const { guildId, key } = (await request.json()) as {
-    guildId: string;
-    key: string;
-  };
-  
-  if (key !== process.env.SECRET_KEY) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
+export const POST = auth(async function POST(request:NextAuthRequest) {
+  console.log(request.auth)
+  const guildId=process.env.DISCORD_GUILD_ID as string;
   const res = await fetch(`${process.env.INTERNAL_API_BASE_URL}/api/members`);
   const db_members = (await res.json()) as Member[];
 
@@ -90,4 +84,4 @@ export async function POST(request: NextRequest) {
   }
 
   return new NextResponse("Roles updated", { status: 200 });
-}
+})

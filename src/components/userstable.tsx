@@ -32,6 +32,8 @@ import {
 import { toast } from "~/hooks/use-toast"
 import {type Member } from "~/lib/types/member"
 
+import { ReloadIcon } from "@radix-ui/react-icons"
+
 
 interface CsvMember {
   name: string
@@ -90,6 +92,7 @@ export default function MemberTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deletingMemberId, setDeletingMemberId] = useState<number | null>(null)
   const [isBulkUploadDialogOpen, setIsBulkUploadDialogOpen] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -346,6 +349,29 @@ export default function MemberTable() {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">Member List</h2>
         <div className="space-x-2">
+          <Button onClick={async ()=>{
+            setSyncing(true)
+            const res = await fetch('/api/discord/roles/sync', {method: 'POST'})
+            if (!res.ok) {
+              toast({
+                title: "Error Syncing with Discord",
+                description: "Failed to sync with Discord. Please try again.",
+                variant: "destructive",
+                duration: 2000,
+              })
+            } else {
+              await fetchMembers()
+              toast({
+                title: "Sync Successful",
+                description: "Member roles have been synced with Discord.",
+                duration: 2000,
+              })
+            }
+            setSyncing(false)
+          }}>
+            {syncing && <ReloadIcon className="mr-2 h-4 w-4 animate-spin"/>}
+            Sync with Discord
+          </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>Add Member</Button>
