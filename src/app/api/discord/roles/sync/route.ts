@@ -1,10 +1,10 @@
+import type { NextAuthRequest } from "node_modules/next-auth/lib";
 import { NextResponse } from "next/server";
-import { NextAuthRequest } from "node_modules/next-auth/lib";
 import { addRole, deleteRole } from "~/lib/discord";
 import type { Member } from "~/lib/types/member";
 import { auth } from "~/server/auth";
 
-const TECHNICAL = "1292540786759700623"; 
+const TECHNICAL = "1292540786759700623";
 const DESIGN = "1292540869433491466";
 const MARKETING = "1292540932054585384";
 const MANAGEMENT = "1292540937653715088";
@@ -22,9 +22,9 @@ interface DiscordMember {
   roles: string[];
 }
 
-export const POST = auth(async function POST(request:NextAuthRequest) {
-  console.log(request.auth)
-  const guildId=process.env.DISCORD_GUILD_ID as string;
+export const POST = auth(async function POST(request: NextAuthRequest) {
+  console.log(request.auth);
+  const guildId = process.env.DISCORD_GUILD_ID!;
   const res = await fetch(`${process.env.INTERNAL_API_BASE_URL}/api/members`);
   const db_members = (await res.json()) as Member[];
 
@@ -45,17 +45,17 @@ export const POST = auth(async function POST(request:NextAuthRequest) {
       },
     }
   );
-  
+
   const discord_members_json: DiscordMember[] = (await discord_members.json()) as DiscordMember[];
 
   for (const member of db_members) {
-    const discordMember: DiscordMember | undefined = discord_members_json.find(
+    const discordMember = discord_members_json.find(
       (m: DiscordMember) => m.user.id === member.discord_id
-    );
+    )!; // Use non-null assertion operator
 
     if (!discordMember) {
       console.log(`Discord member not found for user ID: ${member.discord_id}`);
-      continue; 
+      continue;
     }
 
     const memberRoles: string[] = discordMember.roles;
@@ -64,7 +64,7 @@ export const POST = auth(async function POST(request:NextAuthRequest) {
 
     if (!requiredRoleId) {
       console.log(`Invalid role for member: ${member.discord_id}`);
-      continue; 
+      continue;
     }
 
     const hasAppropriateRole = memberRoles.includes(requiredRoleId);
@@ -84,6 +84,6 @@ export const POST = auth(async function POST(request:NextAuthRequest) {
   }
 
   return new NextResponse("Roles updated", { status: 200 });
-})
+});
 
 export const dynamic = "force-dynamic";
