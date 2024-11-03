@@ -85,3 +85,5 @@ export const POST = auth(async function POST(request:NextAuthRequest) {
 
   return new NextResponse("Roles updated", { status: 200 });
 })
+
+export const dynamic = "force-dynamic";

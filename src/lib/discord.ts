@@ -40,7 +40,6 @@ export async function addRole(guildId: string, userId: string, roleId: string) {
     }
 
     const memberData = (await getResponse.json()) as DiscordMember;
-    console.log(memberData);
 
     const currentRoles = memberData.roles ?? [];
     const updatedRoles = Array.from(new Set([...currentRoles, roleId]));
@@ -54,7 +53,6 @@ export async function addRole(guildId: string, userId: string, roleId: string) {
       },
       body: JSON.stringify({ roles: updatedRoles }),
     });
-    console.log(patchResponse);
 
     if (!patchResponse.ok) {
       const errorText = await patchResponse.text();
